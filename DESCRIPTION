@@ -1,0 +1,17 @@
+Package: svgg
+Title: What the package does (short line)
+Version: 0.1
+Authors@R: "Matthew Plourde <plourde.m@gmail.com> [aut, cre]"
+Description: What the package does (paragraph)
+Depends:
+    R (>= 3.1.0),
+    proto,
+    grid,
+    gridExtra,
+    ggplot2,
+    shiny,
+    htmltools,
+    ggplot2,
+    gridSVG
+License: GPL
+LazyData: true
