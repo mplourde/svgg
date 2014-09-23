@@ -12,6 +12,8 @@ Depends:
     shiny,
     htmltools,
     ggplot2,
-    gridSVG
+    gridSVG,
+    RJSONIO,
+    scales
 License: GPL
 LazyData: true

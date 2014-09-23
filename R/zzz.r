@@ -1,5 +1,5 @@
 .onLoad <- function(libname, pkgname) {
-    addResourcePath('roow', system.file('www', package='roow'))
+    addResourcePath('svgg', system.file('www', package='svgg'))
     #addResourcePath('roow/images', system.file('www/images', package='roow'))
 }
 
