@@ -188,8 +188,7 @@ GeomBoxplot <- proto(ggplot2:::Geom, {
         colour = ifelse(is.na(outlier.colour) || is.null(outlier.colour), data$colour[1], outlier.colour),
         shape = outlier.shape %||% data$shape[1],
         size = outlier.size %||% data$size[1],
-        data.original.title = data$outlier.data.original.title[[1]],
-        data.original.title = '',
+        data.original.title = as.character(data$outlier.data.original.title[[1]]),
         onmouseover='',
         onmouseout='',
         fill = NA,
@@ -228,6 +227,7 @@ GeomBoxplot <- proto(ggplot2:::Geom, {
 
 #geom_boxplot <- ggplot2::geom_boxplot
 #environment(geom_boxplot) <- environment()
+#' @export
 geom_boxplot <- function (mapping = NULL, data = NULL, stat = "boxplot", position = "dodge", 
     outlier.colour = NULL, outlier.shape = NULL, outlier.size = NULL, 
     notch = FALSE, notchwidth = 0.5, varwidth = FALSE, ...) 
@@ -357,12 +357,13 @@ test0 <- function() {
             #    theme(axis.title.x=element_text(size=12, vjust=0))
             
             mtcars <- within(mtcars, gear <- as.factor(gear))
-            #ggplot(mtcars, aes(wt, mpg, group=1, colour=gear)) + geom_line()
+            #p <- ggplot(mtcars, aes(wt, mpg, group=1, colour=gear)) + geom_line()
             #ggplot(mtcars, aes(wt, mpg)) + geom_line() + geom_point(alpha=0, onmouseover='set_alpha(this, 1)', 
             #    onmouseout='set_alpha(this, 0)')
             #ggplot(mtcars, aes(factor(cyl), mpg, outlier.data.original.title=mpg)) + geom_boxplot()
             #p <- ggplot(mtcars, aes(factor(cyl), mpg, fill=factor(vs))) + geom_boxplot()
-            p <- ggplot(diamonds, aes(factor(cut), carat, colour=factor(color))) + 
+            d <- within(diamonds, color<-as.character(color))
+            p <- ggplot(d, aes(factor(cut), carat, colour=factor(color), outlier.data.original.title=I(color), group=factor(cut))) + 
                 geom_boxplot(outlier.colour=NA)
             p
         }, svg.id='bacon', 

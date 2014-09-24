@@ -1,3 +1,4 @@
+export(geom_boxplot)
 export(geom_point)
 export(ggplot2SVG)
 export(renderSVGG)

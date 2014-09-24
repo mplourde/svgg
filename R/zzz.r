@@ -62,6 +62,7 @@
               df$outlier.data.original.title <- I(list(labels))
           }
 
+
           if (is.null(weight)) {
             n <- sum(!is.na(y))
           } else {
