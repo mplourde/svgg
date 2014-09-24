@@ -13,12 +13,12 @@ GeomPoint <- proto(ggplot2:::Geom, {
       c("x", "y", "size", "shape"), name = "geom_point")
     if (empty(data)) return(zeroGrob())
 
-    with(coord_transform(coordinates, data, scales),
+    with(coord_transform(coordinates, data, scales), {
       ggname(.$my_name(), pointsGrob(x, y, size=unit(size, "mm"), pch=shape,
       gp=gpar(col=alpha(colour, alpha), fill = alpha(fill, alpha), fontsize = size * .pt, 
         onmouseover=onmouseover, onmouseout=onmouseout,
         `data-original-title`=data.original.title)))
-    )
+    })
   }
 
   draw_legend <- function(., data, ...) {
@@ -54,190 +54,195 @@ geom_point <- ggplot2::geom_point
 environment(geom_point) <- environment()
 #geom_point <- as.function(c(formals(ggplot2::geom_point), body(ggplot2::geom_point)))
 
-#GeomHighlight <- proto(ggplot2:::Geom, {
-#  objname <- "point"
+`%||%` <- ggplot2:::`%||%`
+
+#StatBoxplot <- proto(ggplot2:::Stat, {
+#  objname <- "boxplot"
 #
-#  draw_groups <- function(., ...) .$draw(...)
-#  draw <- function(., data, scales, coordinates, na.rm = FALSE, ...) {
-#    data <- remove_missing(data, na.rm,
-#      c("x", "y", "size", "shape"), name = "geom_point")
-#    if (empty(data)) return(zeroGrob())
-#
-#    with(coord_transform(coordinates, data, scales),
-#      ggname(.$my_name(), pointsGrob(x, y, size=unit(size, "mm"), pch=shape,
-#      gp=gpar(col=alpha(colour, alpha), fill = alpha(fill, alpha), fontsize = size * .pt, 
-#        `data-original-title`=data.original.title,
-#        style=style)))
-#    )
-#  }
-#
-#  draw_legend <- function(., data, ...) {
-#    data <- aesdefaults(data, .$default_aes(), list(...))
-#
-#    with(data,
-#      pointsGrob(0.5, 0.5, size=unit(size, "mm"), pch=shape,
-#      gp=gpar(
-#        col=alpha(colour, alpha),
-#        fill=alpha(fill, alpha),
-#        fontsize = size * .pt)
-#        #`data-original-title`=data.original.title)
-#      )
-#    )
-#  }
-#
-#  default_stat <- function(.) StatIdentity
 #  required_aes <- c("x", "y")
-#  default_aes <- function(.) {
-#        aes(shape=16, colour="black", size=2, fill = NA, alpha = 1, #group=x, #style='visibility:hidden;',
-#          onmouseover='',
-#          data.original.title=paste0('(', paste(if (is.numeric(x)) sprintf('%.2f', x) else x, 
-#                      if (is.numeric(y)) sprintf('%.2f', y) else y,
-#                      sep=', '), ')')
-#        )
+#  default_geom <- function(.) svgg:::GeomBoxplot
+#
+#  calculate_groups <- function(., data, na.rm = FALSE, width = NULL, ...) {
+#    data <- remove_missing(data, na.rm, c("y", "weight"), name="stat_boxplot",
+#      finite = TRUE)
+#    data$weight <- data$weight %||% 1
+#    width <- width %||%  resolution(data$x) * 0.75
+#
+#    .super$calculate_groups(., data, na.rm = na.rm, width = width, ...)
 #  }
 #
-#})
+#  calculate <- function(., data, scales, width=NULL, na.rm = FALSE, coef = 1.5, ...) {
+#    with(data, {
+#      qs <- c(0, 0.25, 0.5, 0.75, 1)
+#      if (length(unique(weight)) != 1) {
+#        try_require("quantreg")
+#        stats <- as.numeric(coef(rq(y ~ 1, weights = weight, tau=qs)))
+#      } else {
+#        stats <- as.numeric(quantile(y, qs))
+#      }
+#      names(stats) <- c("ymin", "lower", "middle", "upper", "ymax")
 #
-#geom_highlight <- function (mapping = NULL, data = NULL, stat = "identity", position = "identity", 
-#    na.rm = FALSE, ...) 
-#{
-#    GeomHighlight$new(mapping = mapping, data = data, stat = stat, 
-#        position = position, na.rm = na.rm, ...)
-#}
+#      iqr <- diff(stats[c(2, 4)])
 #
-#geom_line2 <- function(...) {
-#    geom_line(...) + geom_highlight()
+#      outliers <- y < (stats[2] - coef * iqr) | y > (stats[4] + coef * iqr)
+#      if (any(outliers)) {
+#        stats[c(1, 5)] <- range(c(stats[2:4], y[!outliers]), na.rm=TRUE)
+#      }
 #
-#}
-
-
-
-#GeomPath <- proto(ggplot2:::Geom, {
-#  objname <- "path"
+#      if (length(unique(x)) > 1) width <- diff(range(x)) * 0.9
 #
-#  draw_groups <- function(., ...) .$draw(...)
+#      browser()
+#      df <- as.data.frame(as.list(stats))
+#      df$outliers <- I(list(y[outliers]))
 #
-#  draw <- function(., data, scales, coordinates, arrow = NULL, lineend = "butt", linejoin = "round", linemitre = 1, ..., na.rm = FALSE) {
-#    if (!anyDuplicated(data$group)) {
-#      message("geom_path: Each group consist of only one observation. Do you need to adjust the group aesthetic?")
-#    }
+#      if (is.null(weight)) {
+#        n <- sum(!is.na(y))
+#      } else {
+#        # Sum up weights for non-NA positions of y and weight
+#        n <- sum(weight[!is.na(y) & !is.na(weight)])
+#      }
 #
-#    keep <- function(x) {
-#      # from first non-missing to last non-missing
-#      first <- match(FALSE, x, nomatch = 1) - 1
-#      last <- length(x) - match(FALSE, rev(x), nomatch = 1) + 1
-#      c(
-#        rep(FALSE, first),
-#        rep(TRUE, last - first),
-#        rep(FALSE, length(x) - last))
-#    }
-#    # Drop missing values at the start or end of a line - can't drop in the
-#    # middle since you expect those to be shown by a break in the line
-#    missing <- !complete.cases(data[c("x", "y", "size", "colour",
-#      "linetype")])
-#    kept <- ave(missing, data$group, FUN=keep)
-#    data <- data[kept, ]
-#    # must be sorted on group
-#    data <- arrange(data, group)
+#      df$notchupper <- df$middle + 1.58 * iqr / sqrt(n)
+#      df$notchlower <- df$middle - 1.58 * iqr / sqrt(n)
 #
-#    if (!all(kept) && !na.rm) {
-#      warning("Removed ", sum(!kept), " rows containing missing values",
-#        " (geom_path).", call. = FALSE)
-#    }
-#
-#    munched <- coord_munch(coordinates, data, scales)
-#
-#    # Silently drop lines with less than two points, preserving order
-#    rows <- ave(seq_len(nrow(munched)), munched$group, FUN = length)
-#    munched <- munched[rows >= 2, ]
-#    if (nrow(munched) < 2) return(zeroGrob())
-#
-#    # Work out whether we should use lines or segments
-#    attr <- ddply(munched, .(group), function(df) {
-#      data.frame(
-#        solid = identical(unique(df$linetype), 1),
-#        constant = nrow(unique(df[, c("alpha", "colour","size", "linetype")])) == 1
+#      transform(df,
+#        x = if (is.factor(x)) x[1] else mean(range(x)),
+#        width = width,
+#        relvarwidth = sqrt(n)
 #      )
 #    })
-#    solid_lines <- all(attr$solid)
-#    constant <- all(attr$constant)
-#    if (!solid_lines && !constant) {
-#      stop("geom_path: If you are using dotted or dashed lines",
-#        ", colour, size and linetype must be constant over the line",
-#        call.=FALSE)
-#    }
-#
-#    # Work out grouping variables for grobs
-#    n <- nrow(munched)
-#    group_diff <- munched$group[-1] != munched$group[-n]
-#    start <- c(TRUE, group_diff)
-#    end <-   c(group_diff, TRUE)
-#
-#    if (!constant) {
-#      with(munched,
-#        segmentsGrob(
-#          x[!end], y[!end], x[!start], y[!start],
-#          default.units="native", arrow = arrow,
-#          gp = gpar(
-#            col = alpha(colour, alpha)[!end], fill = alpha(colour, alpha)[!end],
-#            lwd = size[!end] * .pt, lty = linetype[!end],
-#            lineend = lineend, linejoin = linejoin, linemitre = linemitre,
-#            `data-original-title`=data.original.title
-#
-#          )
-#        )
-#      )
-#    } else {
-#      id <- match(munched$group, unique(munched$group))
-#      with(munched,
-#        polylineGrob(
-#          x, y, id = id,
-#          default.units = "native", arrow = arrow,
-#          gp = gpar(
-#            col = alpha(colour, alpha)[start], fill = alpha(colour, alpha)[start],
-#            lwd = size[start] * .pt, lty = linetype[start],
-#            lineend = lineend, linejoin = linejoin, linemitre = linemitre,
-#            `data-original-title`=data.original.title
-#            )
-#        )
-#      )
-#    }
 #  }
-#
-#  draw_legend <- function(., data, ...) {
-#    data$arrow <- NULL
-#    data <- aesdefaults(data, .$default_aes(), list(...))
-#
-#    with(data,
-#      ggname(.$my_name(), segmentsGrob(0.1, 0.5, 0.9, 0.5, default.units="npc",
-#      gp=gpar(col=alpha(colour, alpha), lwd=size * .pt,
-#        lty=linetype, lineend="butt")))
-#    )
-#  }
-#
-#  default_stat <- function(.) StatIdentity
-#  required_aes <- c("x", "y")
-#  default_aes <- function(.) aes(colour="black", size=0.5, linetype=1, alpha = NA, data.original.title=NA)
-#  guide_geom <- function(.) "path"
-#
 #})
 #
-#
-#geom_line <- function (mapping = NULL, data = NULL, stat = "identity", position = "identity", ...) {
-#  GeomLine$new(mapping = mapping, data = data, stat = stat, position = position, ...)
-#}
-#
-#GeomLine <- proto(GeomPath, {
-#  objname <- "line"
-#
-#  draw <- function(., data, scales, coordinates, arrow = NULL, ...) {
-#    data <- data[order(data$group, data$x), ]
-#    GeomPath$draw(data, scales, coordinates, arrow, ...)
-#  }
-#
-#  default_stat <- function(.) StatIdentity
-#
-#})
+#unlockBinding("StatBoxplot", getNamespace("ggplot2"))
+#assign("StatBoxplot", StatBoxplot, getNamespace("ggplot2"))
+
+GeomBoxplot <- proto(ggplot2:::Geom, {
+  objname <- "boxplot"
+
+  reparameterise <- function(., df, params) {
+    df$width <- df$width %||%
+      params$width %||% (resolution(df$x, FALSE) * 0.9)
+
+    if (!is.null(df$outliers)) {
+      suppressWarnings({
+        out_min <- vapply(df$outliers, min, numeric(1))
+        out_max <- vapply(df$outliers, max, numeric(1))
+      })
+
+      df$ymin_final <- pmin(out_min, df$ymin)
+      df$ymax_final <- pmax(out_max, df$ymax)
+    }
+
+    # if `varwidth` not requested or not available, don't use it
+    if (is.null(params) || is.null(params$varwidth) || !params$varwidth || is.null(df$relvarwidth)) {
+      df$xmin <- df$x - df$width / 2
+      df$xmax <- df$x + df$width / 2
+    } else {
+      # make `relvarwidth` relative to the size of the largest group
+      df$relvarwidth <- df$relvarwidth / max(df$relvarwidth)
+      df$xmin <- df$x - df$relvarwidth * df$width / 2
+      df$xmax <- df$x + df$relvarwidth * df$width / 2
+    }
+    df$width <- NULL
+    if (!is.null(df$relvarwidth)) df$relvarwidth <- NULL
+
+    df
+  }
+
+  draw <- function(., data, ..., fatten = 2, outlier.colour = NULL, outlier.shape = NULL, outlier.data.original.title=NULL,
+                  outlier.size = 2, notch = FALSE, notchwidth = .5, varwidth = FALSE) {
+    common <- data.frame(
+      colour = data$colour,
+      size = data$size,
+      linetype = data$linetype,
+      fill = alpha(data$fill, data$alpha),
+      group = data$group,
+      stringsAsFactors = FALSE
+    )
+
+    whiskers <- data.frame(
+      x = data$x,
+      xend = data$x,
+      y = c(data$upper, data$lower),
+      yend = c(data$ymax, data$ymin),
+      alpha = NA,
+      common)
+
+    box <- data.frame(
+      xmin = data$xmin,
+      xmax = data$xmax,
+      ymin = data$lower,
+      y = data$middle,
+      ymax = data$upper,
+      ynotchlower = ifelse(notch, data$notchlower, NA),
+      ynotchupper = ifelse(notch, data$notchupper, NA),
+      notchwidth = notchwidth,
+      alpha = data$alpha,
+      common)
+
+    if (!is.null(data$outliers) && length(data$outliers[[1]] >= 1)) {
+      outliers <- data.frame(
+        y = data$outliers[[1]],
+        x = data$x[1],
+        colour = ifelse(is.na(outlier.colour) || is.null(outlier.colour), data$colour[1], outlier.colour),
+        shape = outlier.shape %||% data$shape[1],
+        size = outlier.size %||% data$size[1],
+        data.original.title = data$outlier.data.original.title[[1]],
+        data.original.title = '',
+        onmouseover='',
+        onmouseout='',
+        fill = NA,
+        alpha = NA,
+        stringsAsFactors = FALSE)
+      outliers_grob <- svgg:::GeomPoint$draw(outliers, ...)
+    } else {
+      outliers_grob <- NULL
+    }
+
+    ggname(.$my_name(), grobTree(
+      outliers_grob,
+      ggplot2:::GeomSegment$draw(whiskers, ...),
+      ggplot2:::GeomCrossbar$draw(box, fatten = fatten, ...)
+    ))
+  }
+
+  guide_geom <- function(.) "boxplot"
+  draw_legend <- function(., data, ...)  {
+    data <- aesdefaults(data, .$default_aes(), list(...))
+    gp <- with(data, gpar(col=colour, fill=alpha(fill, alpha), lwd=size * .pt, lty = linetype))
+    gTree(gp = gp, children = gList(
+      linesGrob(0.5, c(0.1, 0.25)),
+      linesGrob(0.5, c(0.75, 0.9)),
+      rectGrob(height=0.5, width=0.75),
+      linesGrob(c(0.125, 0.875), 0.5)
+    ))
+  }
+
+  default_stat <- function(.) StatBoxplot
+  default_pos <- function(.) PositionDodge
+  default_aes <- function(.) aes(weight=1, colour="grey20", fill="white", size=0.5, alpha = NA, shape = 16, linetype = "solid")
+  required_aes <- c("x", "lower", "upper", "middle", "ymin", "ymax")
+
+})
+
+#geom_boxplot <- ggplot2::geom_boxplot
+#environment(geom_boxplot) <- environment()
+geom_boxplot <- function (mapping = NULL, data = NULL, stat = "boxplot", position = "dodge", 
+    outlier.colour = NULL, outlier.shape = NULL, outlier.size = NULL, 
+    notch = FALSE, notchwidth = 0.5, varwidth = FALSE, ...) 
+{
+    outlier_defaults <- ggplot2:::Geom$find("point")$default_aes()
+    outlier.colour <- outlier.colour %||% outlier_defaults$colour
+    outlier.shape <- outlier.shape %||% outlier_defaults$shape
+    outlier.size <- outlier.size %||% outlier_defaults$size
+    svgg:::GeomBoxplot$new(mapping = mapping, data = data, stat = stat, 
+        position = position, outlier.colour = outlier.colour, 
+        outlier.shape = outlier.shape, outlier.size = outlier.size, 
+        notch = notch, notchwidth = notchwidth, varwidth = varwidth, 
+        ...)
+}
+
 
 #' @export 
 ggplot2SVG <- function(g, ..., id, width=400, height=400, res=72, 
@@ -353,8 +358,13 @@ test0 <- function() {
             
             mtcars <- within(mtcars, gear <- as.factor(gear))
             #ggplot(mtcars, aes(wt, mpg, group=1, colour=gear)) + geom_line()
-            ggplot(mtcars, aes(wt, mpg)) + geom_line() + geom_point(alpha=0, onmouseover='set_alpha(this, 1)', 
-                onmouseout='set_alpha(this, 0)')
+            #ggplot(mtcars, aes(wt, mpg)) + geom_line() + geom_point(alpha=0, onmouseover='set_alpha(this, 1)', 
+            #    onmouseout='set_alpha(this, 0)')
+            #ggplot(mtcars, aes(factor(cyl), mpg, outlier.data.original.title=mpg)) + geom_boxplot()
+            #p <- ggplot(mtcars, aes(factor(cyl), mpg, fill=factor(vs))) + geom_boxplot()
+            p <- ggplot(diamonds, aes(factor(cut), carat, colour=factor(color))) + 
+                geom_boxplot(outlier.colour=NA)
+            p
         }, svg.id='bacon', 
            popover.opts=list(trigger='click', placement='bottom', html='true', title='bacon',
                 content=svgDownloadButton('svg_test_dl', 'Download PNG', 'svg_test'))
