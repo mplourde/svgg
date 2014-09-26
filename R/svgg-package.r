@@ -56,67 +56,6 @@ environment(geom_point) <- environment()
 
 `%||%` <- ggplot2:::`%||%`
 
-#StatBoxplot <- proto(ggplot2:::Stat, {
-#  objname <- "boxplot"
-#
-#  required_aes <- c("x", "y")
-#  default_geom <- function(.) svgg:::GeomBoxplot
-#
-#  calculate_groups <- function(., data, na.rm = FALSE, width = NULL, ...) {
-#    data <- remove_missing(data, na.rm, c("y", "weight"), name="stat_boxplot",
-#      finite = TRUE)
-#    data$weight <- data$weight %||% 1
-#    width <- width %||%  resolution(data$x) * 0.75
-#
-#    .super$calculate_groups(., data, na.rm = na.rm, width = width, ...)
-#  }
-#
-#  calculate <- function(., data, scales, width=NULL, na.rm = FALSE, coef = 1.5, ...) {
-#    with(data, {
-#      qs <- c(0, 0.25, 0.5, 0.75, 1)
-#      if (length(unique(weight)) != 1) {
-#        try_require("quantreg")
-#        stats <- as.numeric(coef(rq(y ~ 1, weights = weight, tau=qs)))
-#      } else {
-#        stats <- as.numeric(quantile(y, qs))
-#      }
-#      names(stats) <- c("ymin", "lower", "middle", "upper", "ymax")
-#
-#      iqr <- diff(stats[c(2, 4)])
-#
-#      outliers <- y < (stats[2] - coef * iqr) | y > (stats[4] + coef * iqr)
-#      if (any(outliers)) {
-#        stats[c(1, 5)] <- range(c(stats[2:4], y[!outliers]), na.rm=TRUE)
-#      }
-#
-#      if (length(unique(x)) > 1) width <- diff(range(x)) * 0.9
-#
-#      browser()
-#      df <- as.data.frame(as.list(stats))
-#      df$outliers <- I(list(y[outliers]))
-#
-#      if (is.null(weight)) {
-#        n <- sum(!is.na(y))
-#      } else {
-#        # Sum up weights for non-NA positions of y and weight
-#        n <- sum(weight[!is.na(y) & !is.na(weight)])
-#      }
-#
-#      df$notchupper <- df$middle + 1.58 * iqr / sqrt(n)
-#      df$notchlower <- df$middle - 1.58 * iqr / sqrt(n)
-#
-#      transform(df,
-#        x = if (is.factor(x)) x[1] else mean(range(x)),
-#        width = width,
-#        relvarwidth = sqrt(n)
-#      )
-#    })
-#  }
-#})
-#
-#unlockBinding("StatBoxplot", getNamespace("ggplot2"))
-#assign("StatBoxplot", StatBoxplot, getNamespace("ggplot2"))
-
 GeomBoxplot <- proto(ggplot2:::Geom, {
   objname <- "boxplot"
 
@@ -342,37 +281,97 @@ renderSVGG <- function(svg.id, expr, tooltip.opts=list(trigger='hover', containe
 }
 
 #' @export
-test0 <- function() {
+svgg.example <- function() {
     ui <- fluidPage(
         #tags$head(tags$script(src='roow/grob-label/svgOutput-bindings.js')),
-        svgOutput('svg_test'),
-        plotOutput('reg_test')
+        h4('simple_boxplot'),
+        svgOutput('simple_boxplot'),
+        h4('complex_boxplot'),
+        svgOutput('complex_boxplot'),
+        h4('scatter_plot_default_labels'),
+        svgOutput('scatter_plot_default_labels'),
+        h4('scatter_plot_custom_labels'),
+        svgOutput('scatter_plot_custom_labels'),
+        h4('line_plot'),
+        svgOutput('line_plot'),
+        h4('arrangeGrob'),
+        svgOutput('arrangeGrob')
     )
 
     server <- function(input, output, session) {
-        output$svg_test <- renderSVGG({
-            #ggplot(mtcars, aes(rescale(wt), rescale(mpg))) + geom_line() + 
-            #    geom_point(aes(x=rescale(Sepal.Length), rescale(Sepal.Width), data.original.title=Species), 
-            #        data=iris, size=2, colour='black') +
-            #    theme(axis.title.x=element_text(size=12, vjust=0))
-            
-            mtcars <- within(mtcars, gear <- as.factor(gear))
-            #p <- ggplot(mtcars, aes(wt, mpg, group=1, colour=gear)) + geom_line()
-            #ggplot(mtcars, aes(wt, mpg)) + geom_line() + geom_point(alpha=0, onmouseover='set_alpha(this, 1)', 
-            #    onmouseout='set_alpha(this, 0)')
-            #ggplot(mtcars, aes(factor(cyl), mpg, outlier.data.original.title=mpg)) + geom_boxplot()
-            #p <- ggplot(mtcars, aes(factor(cyl), mpg, fill=factor(vs))) + geom_boxplot()
-            d <- within(diamonds, color<-as.character(color))
-            p <- ggplot(d, aes(factor(cut), carat, colour=factor(color), outlier.data.original.title=I(color), group=factor(cut))) + 
-                geom_boxplot(outlier.colour=NA)
+        output$simple_boxplot <- renderSVGG('simple_boxplot_svg', {
+            #d <- within(diamonds, color<-as.character(color))
+            p <- ggplot(diamonds, 
+                    aes(cut, carat, outlier.data.original.title=I(color), group=cut)) + 
+                geom_boxplot()
             p
-        }, svg.id='bacon', 
-           popover.opts=list(trigger='click', placement='bottom', html='true', title='bacon',
-                content=svgDownloadButton('svg_test_dl', 'Download PNG', 'svg_test'))
+        },
+            popover.opts=list(trigger='click', placement='bottom', html='true', title='simple_boxplot',
+                    content=svgDownloadButton('simple_boxplot_dl', 'Download PNG', 'simple_boxplot'))
         )
-        output$reg_test <- renderPlot({
-            print(ggplot(mtcars, aes(wt, mpg)) + geom_line())
+
+        output$complex_boxplot <- renderSVGG('simple_boxplot_svg', {
+            #d <- within(diamonds, color<-as.character(color))
+            p <- ggplot(diamonds, 
+                    aes(cut, carat, fill=color, outlier.data.original.title=I(carat), 
+                        group=interaction(cut, color))) + 
+                geom_boxplot()
+            p
+        },
+            popover.opts=list(trigger='click', placement='bottom', html='true', title='complex_boxplot',
+                    content=svgDownloadButton('complex_boxplot_dl', 'Download PNG', 'complex_boxplot'))
+        )
+
+        output$scatter_plot_default_labels <- renderSVGG('scatter_plot_default_labels_svg', {
+            p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
+        },
+            popover.opts=list(trigger='click', placement='bottom', html='true', title='scatter_plot_default_labels',
+                    content=svgDownloadButton('scatter_plot_default_labels_dl', 'Download PNG', 'scatter_plot_default_labels'))
+        )
+
+        output$scatter_plot_custom_labels <- renderSVGG('scatter_plot_custom_labels_svg', {
+            p <- ggplot(mtcars, aes(wt, mpg, data.original.title=mpg)) + geom_point()
+        },
+            popover.opts=list(trigger='click', placement='bottom', html='true', title='scatter_plot_custom_labels',
+                    content=svgDownloadButton('scatter_plot_custom_labels_dl', 'Download PNG', 'scatter_plot_custom_labels'))
+        )
+
+        output$line_plot <- renderSVGG('line_plot', {
+            set.seed(100)
+            n <- 50
+            d <- data.frame(x=seq(n), y=rnorm(n))
+            ggplot(d, aes(x, y)) + geom_line() + geom_point(alpha=0, size=4, color='red', onmouseover='set_alpha(this, 1)', 
+                onmouseout='set_alpha(this, 0)')
+        },
+            popover.opts=list(trigger='click', placement='bottom', html='true', title='line_plot',
+                    content=svgDownloadButton('line_plot_dl', 'Download PNG', 'line_plot'))
+        )
+
+        output$arrangeGrob <- renderSVGG('arrangeGrob', {
+            p1 <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
+            p2 <- ggplot(diamonds, 
+                    aes(cut, carat, outlier.data.original.title=I(color), group=cut)) + 
+                geom_boxplot()
+            arrangeGrob(p1, p2, nrow=1)
         })
+
+        #output$svg_test <- renderSVGG({
+        #    #ggplot(mtcars, aes(rescale(wt), rescale(mpg))) + geom_line() + 
+        #    #    geom_point(aes(x=rescale(Sepal.Length), rescale(Sepal.Width), data.original.title=Species), 
+        #    #        data=iris, size=2, colour='black') +
+        #    #    theme(axis.title.x=element_text(size=12, vjust=0))
+        #    
+        #    mtcars <- within(mtcars, gear <- as.factor(gear))
+        #    #p <- ggplot(mtcars, aes(wt, mpg, group=1, colour=gear)) + geom_line()
+        #    #ggplot(mtcars, aes(wt, mpg)) + geom_line() + geom_point(alpha=0, onmouseover='set_alpha(this, 1)', 
+        #    #    onmouseout='set_alpha(this, 0)')
+        #    #ggplot(mtcars, aes(factor(cyl), mpg, outlier.data.original.title=mpg)) + geom_boxplot()
+        #    #p <- ggplot(mtcars, aes(factor(cyl), mpg, fill=factor(vs))) + geom_boxplot()
+        #}, svg.id='bacon', 
+        #   popover.opts=list(trigger='click', placement='bottom', html='true', title='bacon',
+        #        content=svgDownloadButton('svg_test_dl', 'Download PNG', 'svg_test'))
+        #)
+
     }
 
     runApp(list(ui=ui, server=server))
