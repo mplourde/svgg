@@ -207,7 +207,10 @@ ggplot2SVG <- function(g, ..., id, width=400, height=400, res=72,
     on.exit(dev.off())
     print(g)
     grid.script(js)
-    invisible(as(grid.export(..., prefix=id, res=res)$svg, 'character'))
+    
+    tempf <- tempfile()
+    on.exit(unlink(tempf))
+    invisible(as(grid.export(..., name=tempf, prefix=id, res=res)$svg, 'character'))
 }
 
 svg.js <- htmlDependency(name='svgBindings', version='0.0.1', c(href='svgg'), script='svgOutput.js')
