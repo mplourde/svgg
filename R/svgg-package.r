@@ -202,7 +202,7 @@ ggplot2SVG <- function(g, ..., id, width=400, height=400, res=72,
     )
     js <- sprintf("$(document).ready(function() {%s});", paste(interfaces, collapse='\n'))
 
-    png('NUL', height=height, width=width)
+    png('NULL', height=height, width=width)
     on.exit(dev.off())
     print(g)
     grid.script(js)
