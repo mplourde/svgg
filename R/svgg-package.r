@@ -202,13 +202,15 @@ ggplot2SVG <- function(g, ..., id, width=400, height=400, res=72,
     )
     js <- sprintf("$(document).ready(function() {%s});", paste(interfaces, collapse='\n'))
 
-    #png('NULL', height=height, width=width)
-    pdf(file=NULL, width=width/res, height=height/res)
-    on.exit(dev.off())
+    temp1 <- tempfile()
+    tempf <- tempfile()
+    png(file=temp1, height=height, width=width)
+    #pdf(file=NULL, width=width/res, height=height/res)
+    on.exit({unlink(temp1);unlink(tempf);dev.off()})
+    message(sys.on.exit())
     print(g)
     grid.script(js)
     
-    tempf <- tempfile()
     on.exit(unlink(tempf))
     invisible(as(grid.export(..., name=tempf, prefix=id, res=res)$svg, 'character'))
 }
