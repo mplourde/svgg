@@ -4,17 +4,17 @@
 }
 
 .onAttach <- function(libname, pkgname) {
-    devParNameToSVGStyleName <- function (name) 
-    {
-        switch(name, col = "stroke", colAlpha = "stroke-opacity", 
-            fill = "fill", fillAlpha = "fill-opacity", fontweight = "font-weight", 
-            fontfamily = "font-family", fontstyle = "font-style", 
-            fontsize = "font-size", alpha = "opacity", lty = "stroke-dasharray", 
-            lwd = "stroke-width", lineend = "stroke-linecap", linejoin = "stroke-linejoin", 
-            linemitre = "stroke-miterlimit", name)
-    }
-    unlockBinding("devParNameToSVGStyleName", getNamespace("gridSVG"))
-    assign("devParNameToSVGStyleName", devParNameToSVGStyleName, getNamespace("gridSVG"))
+    #devParNameToSVGStyleName <- function (name) 
+    #{
+    #    switch(name, col = "stroke", colAlpha = "stroke-opacity", 
+    #        fill = "fill", fillAlpha = "fill-opacity", fontweight = "font-weight", 
+    #        fontfamily = "font-family", fontstyle = "font-style", 
+    #        fontsize = "font-size", alpha = "opacity", lty = "stroke-dasharray", 
+    #        lwd = "stroke-width", lineend = "stroke-linecap", linejoin = "stroke-linejoin", 
+    #        linemitre = "stroke-miterlimit", name)
+    #}
+    #unlockBinding("devParNameToSVGStyleName", getNamespace("gridSVG"))
+    #assign("devParNameToSVGStyleName", devParNameToSVGStyleName, getNamespace("gridSVG"))
 
     StatBoxplot <- proto(ggplot2:::Stat, {
       objname <- "boxplot"
@@ -85,21 +85,21 @@
     unlockBinding("StatBoxplot", getNamespace("ggplot2"))
     assign("StatBoxplot", StatBoxplot, getNamespace("ggplot2"))
 
-    unlockBinding("devStartClip", getNamespace("gridSVG"))
-    unlockBinding(".__T__devStartClip:gridSVG", getNamespace("gridSVG"))
-    f <- function (clip, gp, device) 
-        {
-            svgClipPath(clip$name, clip$x, clip$y, clip$width, clip$height, svgdev=device@dev)
-            cl <- get("contextLevels", envir = .gridSVGEnv)
-            cl[length(cl)] <- cl[length(cl)] + 1
-            assign("contextLevels", cl, envir = .gridSVGEnv)
-            svgStartGroup(clip$name, clip = TRUE, attributes = device@attrs, 
-                links = device@links, show = device@show, style = devParToSVGStyle(gp, 
-                    device), coords = NULL, classes = clip$classes, svgdev = device@dev)
-        }
+    #unlockBinding("devStartClip", getNamespace("gridSVG"))
+    #unlockBinding(".__T__devStartClip:gridSVG", getNamespace("gridSVG"))
+    #f <- function (clip, gp, device) 
+    #    {
+    #        svgClipPath(clip$name, clip$x, clip$y, clip$width, clip$height, svgdev=device@dev)
+    #        cl <- get("contextLevels", envir = .gridSVGEnv)
+    #        cl[length(cl)] <- cl[length(cl)] + 1
+    #        assign("contextLevels", cl, envir = .gridSVGEnv)
+    #        svgStartGroup(clip$name, clip = TRUE, attributes = device@attrs, 
+    #            links = device@links, show = device@show, style = devParToSVGStyle(gp, 
+    #                device), coords = NULL, classes = clip$classes, svgdev = device@dev)
+    #    }
 
-    environment(f) <- getNamespace('gridSVG')
-    setGeneric('devStartClip', where=getNamespace('gridSVG'), def=f)
+    #environment(f) <- getNamespace('gridSVG')
+    #setGeneric('devStartClip', where=getNamespace('gridSVG'), def=f)
 
 }
 ##svgAngleTransform <- function (x, y, angle) 
