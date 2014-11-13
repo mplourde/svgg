@@ -2,7 +2,10 @@
 #'
 #' @name svgg
 #' @docType package
-#' @import grid gridExtra ggplot2 shiny proto htmltools ggplot2 gridSVG RJSONIO scales
+#' @import grid gridExtra ggplot2 shiny proto htmltools ggplot2 gridSVG RJSONIO scales reshape
+
+
+`%||%` <- ggplot2:::`%||%`
 
 GeomPoint <- proto(ggplot2:::Geom, {
   objname <- "point"
@@ -47,14 +50,90 @@ GeomPoint <- proto(ggplot2:::Geom, {
 
 })
 
-
-
 #' @export 
 geom_point <- ggplot2::geom_point
 environment(geom_point) <- environment()
 #geom_point <- as.function(c(formals(ggplot2::geom_point), body(ggplot2::geom_point)))
 
-`%||%` <- ggplot2:::`%||%`
+CustomGeomRect <- proto(ggplot2:::Geom, {
+    objname <- "rect"
+    default_stat <- function(.) StatIdentity
+    default_pos <- function(.) PositionIdentity
+    default_aes <- function(.) aes(colour=NA, fill="grey20", size=0.5, linetype=1, alpha = NA
+                                  , onmouseover='', onmouseout='',
+                                    data.original.title=paste0('(', paste(if (is.numeric(x)) sprintf('%.2f', x)
+                                                                          else x,
+                                                if (is.numeric(y)) sprintf('%.2f', y) else y,
+                                                sep=', '), ')')
+                                  )
+    required_aes <- c("xmin", "xmax", "ymin", "ymax")
+    draw <- draw_groups <- function(., data, scales, coordinates, ...) {
+        if (!is.linear(coordinates)) {
+            aesthetics <- setdiff(
+                names(data), c("x", "y", "xmin","xmax", "ymin", "ymax")
+            )
+            polys <- alply(data, 1, function(row) {
+                poly <- with(row, rect_to_poly(xmin, xmax, ymin, ymax))
+                aes <- as.data.frame(row[aesthetics],
+                stringsAsFactors = FALSE)[rep(1,5), ]
+                GeomPolygon$draw(cbind(poly, aes), scales, coordinates)
+            })
+            ggname("bar",do.call("grobTree", polys))
+        } else {
+            with(coord_transform(coordinates, data, scales),
+                ggname(.$my_name(), rectGrob(
+                    xmin, ymax,
+                    width = xmax - xmin, height = ymax - ymin,
+                    default.units = "native", just = c("left", "top"),
+                    gp=gpar(
+                        col=colour, fill=alpha(fill, alpha),
+                        lwd=size * .pt, lty=linetype, lineend="butt",
+                        onmouseover=onmouseover, onmouseout=onmouseout,
+                        `data-original-title`=data.original.title
+                    )
+                ))
+            )
+        }
+    }
+    guide_geom <- function(.) "polygon"
+})
+
+#' @export 
+geom_rect <- ggplot2::geom_rect
+environment(geom_rect) <- environment()
+
+
+GeomTile <- proto(ggplot2:::Geom, {
+    objname <- "tile"
+    reparameterise <- function(., df, params) {
+        df$width <- df$width %||% params$width %||% resolution(df$x, FALSE)
+        df$height <- df$height %||% params$height %||% resolution(df$y, FALSE)
+        transform(df,
+            xmin = x - width / 2, xmax = x + width / 2, width = NULL,
+            ymin = y - height / 2, ymax = y + height / 2, height = NULL
+        )
+    }
+    draw_groups <- function(., data, scales, coordinates, ...) {
+        # data$colour[is.na(data$colour)] <- data$fill[is.na(data$colour)]
+        CustomGeomRect$draw_groups(data, scales, coordinates, ...)
+    }
+    default_stat <- function(.) StatIdentity
+    default_aes <- function(.) aes(fill="grey20", colour=NA, size=0.1, linetype=1, alpha = NA,
+                                   
+        onmouseover='', onmouseout='',
+          data.original.title=paste0('(', paste(if (is.numeric(x)) sprintf('%.2f', x) else x, 
+                      if (is.numeric(y)) sprintf('%.2f', y) else y,
+                      sep=', '), ')')
+                                   
+                                   )
+    required_aes <- c("x", "y")
+    guide_geom <- function(.) "polygon"
+})
+
+#' @export 
+geom_tile <- ggplot2::geom_tile
+environment(geom_tile) <- environment()
+
 
 GeomBoxplot <- proto(ggplot2:::Geom, {
   objname <- "boxplot"
@@ -301,7 +380,9 @@ svgg.example <- function() {
         h4('line_plot'),
         svgOutput('line_plot'),
         h4('arrangeGrob'),
-        svgOutput('arrangeGrob')
+        svgOutput('arrangeGrob'),
+        h4('geom_tiles'),
+        svgOutput('heat_map')
     )
 
     server <- function(input, output, session) {
@@ -359,6 +440,18 @@ svgg.example <- function() {
                     aes(cut, carat, outlier.data.original.title=I(color), group=cut)) + 
                 geom_boxplot()
             arrangeGrob(p1, p2, nrow=1)
+        })
+        
+        output$heat_map <- renderSVGG('heat_map', {
+            x <- as.matrix(mtcars)
+            rc <- rainbow(nrow(x), start=0, end=.3)
+            cc <- rainbow(ncol(x), start=0, end=.3)
+            #heatmap(x, Rowv=NA, Colv=NA, col=brewer.pal(9, "Blues")[1:9], scale="none", margins=c(5,10), revC=T)
+            y <- melt(x)
+            p1 <- ggplot(y, aes(y=X1, x=X2))
+            p1 <- p1 + geom_tile(aes(fill=value)) +
+                scale_fill_gradient(low="white", high="darkblue") + xlab("") + ylab("")
+            p1
         })
 
         #output$svg_test <- renderSVGG({
