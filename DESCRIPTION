@@ -1,6 +1,6 @@
 Package: svgg
 Title: What the package does (short line)
-Version: 0.1
+Version: 0.2
 Authors@R: "Matthew Plourde <plourde.m@gmail.com> [aut, cre]"
 Description: What the package does (paragraph)
 Depends:
