@@ -206,13 +206,14 @@ ggplot2SVG <- function(g, ..., id, width=400, height=400, res=72,
     tempf <- tempfile()
     png(file=temp1, height=height, width=width)
     #pdf(file=NULL, width=width/res, height=height/res)
-    on.exit({unlink(temp1);unlink(tempf);dev.off()})
-    message(sys.on.exit())
     print(g)
     grid.script(js)
     
-    on.exit(unlink(tempf))
-    suppressWarnings(invisible(as(grid.export(..., name=tempf, prefix=id, res=res)$svg, 'character')))
+    svg.txt <- suppressWarnings(invisible(as(grid.export(..., name=tempf, prefix=id, res=res)$svg, 'character')))
+    dev.off()
+    unlink(temp1)
+    unlink(tempf)
+    return(svg.txt)
 }
 
 svg.js <- htmlDependency(name='svgBindings', version='0.0.1', c(href='svgg'), script='svgOutput.js')
