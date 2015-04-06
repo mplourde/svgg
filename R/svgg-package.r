@@ -166,6 +166,7 @@ GeomBoxplot <- proto(ggplot2:::Geom, {
 
 #geom_boxplot <- ggplot2::geom_boxplot
 #environment(geom_boxplot) <- environment()
+
 #' @export
 geom_boxplot <- function (mapping = NULL, data = NULL, stat = "boxplot", position = "dodge", 
     outlier.colour = NULL, outlier.shape = NULL, outlier.size = NULL, 
@@ -290,7 +291,9 @@ renderSVGG <- function(svg.id, expr, tooltip.opts=list(trigger='hover', containe
 #' @export
 svgg.example <- function() {
     ui <- fluidPage(
-        #tags$head(tags$script(src='roow/grob-label/svgOutput-bindings.js')),
+        h2('svgg Example'),
+        p('This demo will take a moment to load. Click any plot to activate its PNG download popovers'),
+        hr(),
         h4('simple_boxplot'),
         svgOutput('simple_boxplot'),
         h4('complex_boxplot'),
@@ -307,7 +310,6 @@ svgg.example <- function() {
 
     server <- function(input, output, session) {
         output$simple_boxplot <- renderSVGG('simple_boxplot_svg', {
-            #d <- within(diamonds, color<-as.character(color))
             p <- ggplot(diamonds, 
                     aes(cut, carat, outlier.data.original.title=I(color), group=cut)) + 
                 geom_boxplot()
@@ -318,7 +320,6 @@ svgg.example <- function() {
         )
 
         output$complex_boxplot <- renderSVGG('simple_boxplot_svg', {
-            #d <- within(diamonds, color<-as.character(color))
             p <- ggplot(diamonds, 
                     aes(cut, carat, fill=color, outlier.data.original.title=I(carat), 
                         group=interaction(cut, color))) + 
@@ -361,37 +362,17 @@ svgg.example <- function() {
                 geom_boxplot()
             arrangeGrob(p1, p2, nrow=1)
         })
-
-        #output$svg_test <- renderSVGG({
-        #    #ggplot(mtcars, aes(rescale(wt), rescale(mpg))) + geom_line() + 
-        #    #    geom_point(aes(x=rescale(Sepal.Length), rescale(Sepal.Width), data.original.title=Species), 
-        #    #        data=iris, size=2, colour='black') +
-        #    #    theme(axis.title.x=element_text(size=12, vjust=0))
-        #    
-        #    mtcars <- within(mtcars, gear <- as.factor(gear))
-        #    #p <- ggplot(mtcars, aes(wt, mpg, group=1, colour=gear)) + geom_line()
-        #    #ggplot(mtcars, aes(wt, mpg)) + geom_line() + geom_point(alpha=0, onmouseover='set_alpha(this, 1)', 
-        #    #    onmouseout='set_alpha(this, 0)')
-        #    #ggplot(mtcars, aes(factor(cyl), mpg, outlier.data.original.title=mpg)) + geom_boxplot()
-        #    #p <- ggplot(mtcars, aes(factor(cyl), mpg, fill=factor(vs))) + geom_boxplot()
-        #}, svg.id='bacon', 
-        #   popover.opts=list(trigger='click', placement='bottom', html='true', title='bacon',
-        #        content=svgDownloadButton('svg_test_dl', 'Download PNG', 'svg_test'))
-        #)
-
     }
 
     runApp(list(ui=ui, server=server))
 }
 
-#' @export
 test1 <- function() {
     g <- ggplot(mtcars, aes(x=wt, y=mpg, label=mpg)) + geom_text() + facet_wrap(~ cyl)
     #g <- qplot(disp, mpg, data=mtcars) + facet_wrap(~ cyl)
     view.labeled.grob(g)
 }
 
-#' @export
 test2 <- function() {
     #g <- qplot(disp, mpg, data=mtcars) + facet_wrap(~ cyl)
     g <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
@@ -400,53 +381,4 @@ test2 <- function() {
     #grob2SVG(g, name=outpath, exportCoords='inline', exportMappings='inline', exportJS='inline')
     grob2SVG(g, name=outpath)
 }
-
-
-
-
-# options(RCurlOptions=list(proxy='web.proxy.com:8080'))
-# py <- plotly("me", "mec3g0e1z7")
-# p <- ggplot(mtcars, aes(x=mpg, y=cyl)) + geom_point()
-# res <- py$ggplotly(k, kwargs=list(auto_open=FALSE))
-
-
-
-##' @export 
-#grob2LabeledSVG <- function(g=NULL, ..., height=400, width=400) {
-#    if (!is.null(g)) {
-#        #pdf(file=NULL, width=width, height=height)
-#        png('NUL', height=height, width=width)
-#        on.exit(dev.off())
-#        if ('ggplot' %in% class(g)) {
-#            print(g)
-#        } else {
-#            grid.draw(g)
-#        }
-#    }
-#
-#    grobs <- invisible(grid.ls())
-#    names <- grobs$name[grobs$type == 'grobListing']
-#
-#    #for (name in unique(names)) {
-#    #    grid.garnish(name, onmouseover=paste0("showTooltip(evt, '", name, "')"), onmouseout="hideTooltip()")
-#    #}
-#    for (name in unique(names)) {
-#        grid.garnish(name, title=name, class='tooltipped', rel='tooltip', group=TRUE)
-#    }
-#    #tooltip.js.f <- system.file('www', 'grob-label', 'tooltip.js', package='roow')
-#    #tooltip.js <- readChar(tooltip.js.f, file.info(tooltip.js.f)$size)
-#    tooltip.js <- "
-#    $(document).ready(function() {
-#        $('.tooltipped').tooltip({
-#            trigger : 'click',
-#            container : 'body', 
-#            placement : 'right'
-#        });
-#    });
-#    "
-#            #selector : '[rel=tooltip]'
-#    grid.script(tooltip.js)
-#    #grid.script(filename=tooltip.js.f, inline=FALSE)
-#    as(grid.export(...)$svg, 'character')
-#}
 
