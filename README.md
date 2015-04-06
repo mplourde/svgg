@@ -4,7 +4,7 @@ svgg
 
 Installation and Usage
 ================================
-Install *devtools* to enable github installation.
+Install **devtools** to enable github installation.
 
 ```r
 setInternet2() # enable R to use your proxy settings, if necessary
