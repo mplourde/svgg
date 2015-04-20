@@ -46,13 +46,13 @@
 
           df <- as.data.frame(as.list(stats))
           df$outliers <- I(list(y[outliers]))
-          if (exists('outlier.data.original.title')) {
-              df$outlier.data.original.title <- I(list(outlier.data.original.title[outliers]))
+          if (exists('outlier.labels')) {
+              df$outlier.labels <- I(list(outlier.labels[outliers]))
           } else {
               xo <- x[outliers]
               yo <- y[outliers]
               labels <- if (is.numeric(yo)) sprintf('%.2f', yo) else yo
-              df$outlier.data.original.title <- I(list(labels))
+              df$outlier.labels <- I(list(labels))
           }
 
 

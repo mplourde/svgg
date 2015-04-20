@@ -1,0 +1,82 @@
+---
+title: "svgg_example"
+output: html_document
+runtime: shiny
+---
+
+This demo may take a moment to load. Place your mouse over points to view their tooltips. Click any plot to activate its download popover.
+
+
+------------------------
+
+```{r, include=FALSE, cache=FALSE, echo=FALSE}
+library(svgg)
+library(ggplot2)
+library(gridExtra)
+
+```
+
+
+## simple_boxplot
+
+```{r}
+renderSVGG({
+    p <- ggplot(diamonds, 
+            aes(cut, carat, outlier.labels=I(color), group=cut)) + 
+        geom_boxplot()
+}, popover=list(title='simple_boxplot'))
+```
+
+## complex_boxplot
+
+```{r}
+renderSVGG({
+    p <- ggplot(diamonds, 
+            aes(cut, carat, fill=color, outlier.labels=I(carat), 
+                group=interaction(cut, color))) + 
+        geom_boxplot()
+}, popover=list(title='complex_boxplot'))
+```
+
+## scatter_plot_default_labels
+
+```{r}
+renderSVGG({
+    p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
+}, popover=list('scatter_plot_default_labels'))
+```
+
+## scatter_plot_custom_labels
+
+```{r}
+renderSVGG({
+    p <- ggplot(mtcars, aes(wt, mpg, point.labels=cyl)) + geom_point()
+}, popover=list('scatter_plot_custom_labels'))
+```
+
+## line_plot
+
+```{r}
+renderSVGG({
+    set.seed(100)
+    n <- 50
+    d <- data.frame(x=seq(n), y=rnorm(n))
+    ggplot(d, aes(x, y)) + geom_line() + 
+        geom_point(alpha=0, size=4, color='red', 
+            onmouseover='set_alpha(this, 1)', 
+            onmouseout='set_alpha(this, 0)'
+        )
+}, popover=list(title='line_plot'))
+```
+
+## arrangeGrob
+
+```{r}
+renderSVGG({
+    p1 <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
+    p2 <- ggplot(diamonds, aes(cut, carat, outlier.labels=I(color), group=cut)) + 
+        geom_boxplot()
+    arrangeGrob(p1, p2, nrow=1)
+}, popover=list(title='arrangeGrob'))
+```
+

@@ -30,7 +30,6 @@ GeomPoint <- proto(ggplot2:::Geom, {
         col=alpha(colour, alpha),
         fill=alpha(fill, alpha),
         fontsize = size * .pt)
-        #`data-original-title`=data.original.title)
       )
     )
   }
@@ -90,7 +89,7 @@ GeomBoxplot <- proto(ggplot2:::Geom, {
     df
   }
 
-  draw <- function(., data, ..., fatten = 2, outlier.colour = NULL, outlier.shape = NULL, outlier.data.original.title=NULL,
+  draw <- function(., data, ..., fatten = 2, outlier.colour = NULL, outlier.shape = NULL, outlier.labels=NULL,
                   outlier.size = 2, notch = FALSE, notchwidth = .5, varwidth = FALSE) {
     common <- data.frame(
       colour = data$colour,
@@ -128,7 +127,7 @@ GeomBoxplot <- proto(ggplot2:::Geom, {
         colour = ifelse(is.na(outlier.colour) || is.null(outlier.colour), data$colour[1], outlier.colour),
         shape = outlier.shape %||% data$shape[1],
         size = outlier.size %||% data$size[1],
-        data.original.title = as.character(data$outlier.data.original.title[[1]]),
+        point.labels = as.character(data$outlier.labels[[1]]),
         onmouseover='',
         onmouseout='',
         fill = NA,
@@ -307,70 +306,69 @@ renderSVGG <- function(expr,
 svgg.example <- function() {
     ui <- fluidPage(
         h2('svgg Example'),
-        p('This demo will take a moment to load. Click any plot to activate its PNG download popover.'),
+        p('This demo will take a moment to load. Click any plot to activate its download popover.'),
         hr(),
-        #h4('simple_boxplot'),
-        #svgOutput('simple_boxplot'),
-        #h4('complex_boxplot'),
-        #svgOutput('complex_boxplot'),
+        h4('simple_boxplot'),
+        code("
+        output$simple_boxplot <- renderSVGG({
+            p <- ggplot(diamonds, 
+                    aes(cut, carat, outlier.labels=I(color), group=cut)) + 
+                geom_boxplot()
+            p
+        }, popover=list(title='simple_boxplot'))
+        "),
+        svgOutput('simple_boxplot'),
+        h4('complex_boxplot'),
+        svgOutput('complex_boxplot'),
         h4('scatter_plot_default_labels'),
         svgOutput('scatter_plot_default_labels'),
         h4('scatter_plot_custom_labels'),
-        svgOutput('scatter_plot_custom_labels')#,
-        #h4('line_plot'),
-        #svgOutput('line_plot'),
-        #h4('arrangeGrob'),
-        #svgOutput('arrangeGrob')
+        svgOutput('scatter_plot_custom_labels'),
+        h4('line_plot'),
+        svgOutput('line_plot'),
+        h4('arrangeGrob'),
+        svgOutput('arrangeGrob')
     )
 
     server <- function(input, output, session) {
-        #output$simple_boxplot <- renderSVGG('simple_boxplot_svg', {
-        #    p <- ggplot(diamonds, 
-        #            aes(cut, carat, outlier.data.original.title=I(color), group=cut)) + 
-        #        geom_boxplot()
-        #    p
-        #},
-        #    popover.opts=list(trigger='click', placement='bottom', html='true', title='simple_boxplot',
-        #            content=svgDownloadButton('simple_boxplot_dl', 'Download PNG', 'simple_boxplot'))
-        #)
+        output$simple_boxplot <- renderSVGG({
+            p <- ggplot(diamonds, 
+                    aes(cut, carat, outlier.labels=I(color), group=cut)) + 
+                geom_boxplot()
+            p
+        }, popover=list(title='simple_boxplot'))
 
-        #output$complex_boxplot <- renderSVGG('simple_boxplot_svg', {
-        #    p <- ggplot(diamonds, 
-        #            aes(cut, carat, fill=color, outlier.data.original.title=I(carat), 
-        #                group=interaction(cut, color))) + 
-        #        geom_boxplot()
-        #    p
-        #},
-        #    popover.opts=list(trigger='click', placement='bottom', html='true', title='complex_boxplot',
-        #            content=svgDownloadButton('complex_boxplot_dl', 'Download PNG', 'complex_boxplot'))
-        #)
+        output$complex_boxplot <- renderSVGG({
+            p <- ggplot(diamonds, 
+                    aes(cut, carat, fill=color, outlier.labels=I(carat), 
+                        group=interaction(cut, color))) + 
+                geom_boxplot()
+            p
+        }, popover=list(title='complex_boxplot'))
 
         output$scatter_plot_default_labels <- renderSVGG({
             p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
-        })
+        }, popover=list('scatter_plot_default_labels'))
 
         output$scatter_plot_custom_labels <- renderSVGG({
             p <- ggplot(mtcars, aes(wt, mpg, point.labels=cyl)) + geom_point()
+        }, popover=list('scatter_plot_custom_labels'))
+
+        output$line_plot <- renderSVGG({
+            set.seed(100)
+            n <- 50
+            d <- data.frame(x=seq(n), y=rnorm(n))
+            ggplot(d, aes(x, y)) + geom_line() + geom_point(alpha=0, size=4, color='red', 
+                onmouseover='set_alpha(this, 1)', onmouseout='set_alpha(this, 0)')
+        }, popover=list(title='line_plot'))
+
+        output$arrangeGrob <- renderSVGG({
+            p1 <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
+            p2 <- ggplot(diamonds, 
+                    aes(cut, carat, outlier.labels=I(color), group=cut)) + 
+                geom_boxplot()
+            arrangeGrob(p1, p2, nrow=1)
         })
-
-        #output$line_plot <- renderSVGG('line_plot', {
-        #    set.seed(100)
-        #    n <- 50
-        #    d <- data.frame(x=seq(n), y=rnorm(n))
-        #    ggplot(d, aes(x, y)) + geom_line() + geom_point(alpha=0, size=4, color='red', onmouseover='set_alpha(this, 1)', 
-        #        onmouseout='set_alpha(this, 0)')
-        #},
-        #    popover.opts=list(trigger='click', placement='bottom', html='true', title='line_plot',
-        #            content=svgDownloadButton('line_plot_dl', 'Download PNG', 'line_plot'))
-        #)
-
-        #output$arrangeGrob <- renderSVGG('arrangeGrob', {
-        #    p1 <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
-        #    p2 <- ggplot(diamonds, 
-        #            aes(cut, carat, outlier.data.original.title=I(color), group=cut)) + 
-        #        geom_boxplot()
-        #    arrangeGrob(p1, p2, nrow=1)
-        #})
     }
 
     runApp(list(ui=ui, server=server))
