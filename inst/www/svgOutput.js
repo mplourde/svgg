@@ -33,39 +33,6 @@ $.extend(svgOutputBinding, {
 });
 Shiny.outputBindings.register(svgOutputBinding, 'shiny.svgOutput');
 
-//var Debouncer = function(target, func, delayMs) {
-//    this.target = target;
-//    this.func = func;
-//    this.delayMs = delayMs;
-//
-//    this.timerId = null;
-//    this.args = null;
-//};
-//
-//$('.shiny-svg-output').each(function() {
-//  if (this.offsetWidth !== 0 || this.offsetHeight !== 0) {
-//    initialValues['.clientdata_output_' + this.id + '_width'] = this.offsetWidth;
-//    initialValues['.clientdata_output_' + this.id + '_height'] = this.offsetHeight;
-//  }
-//});
-//
-//function doSendSVGSize() {
-//  $('.shiny-svg-output').each(function() {
-//    if (this.offsetWidth !== 0 || this.offsetHeight !== 0) {
-//      inputs.setInput('.clientdata_output_' + this.id + '_width', this.offsetWidth);
-//      inputs.setInput('.clientdata_output_' + this.id + '_height', this.offsetHeight);
-//    }
-//  });
-//  $('.shiny-bound-output').each(function() {
-//    $(this).data('shiny-output-binding').onResize();
-//  });
-//}
-//var sendSVGSizeDebouncer = new Debouncer(null, doSendSVGSize, 0);
-//function sendSVGSize() {
-//  sendSVGSizeDebouncer.normalCall();
-//}
-
-
 download_svg = function(svg_output_id, download) {
     var svg_html = $('#' + svg_output_id + ' .svg_container').html()
     var imgsrc = 'data:image/svg+xml;base64,' + btoa(svg_html);
