@@ -1,14 +1,14 @@
 svgg
 ================================
-**svgg** is an R package for adding mouse-over effects to ggplot2 plot outputs and displaying them using the Shiny framework. The mouse-over effects include point tooltips for `geom_point`, `geom_line`, `geom_boxplot`, and any such plots combined with `arrangeGrob` from the **gridExtra** package. This package relies on the **gridSVG** package for converting plots built on the grid graphics library to SVG.
+**svgg** is an R package for adding mouse effects to ggplot2 plot outputs presented with Shiny. The mouse effects include point tooltips for `geom_point`, `geom_line`, `geom_boxplot`, and any combination of these plots created with `arrangeGrob` from the **gridExtra** package. This package relies on the **gridSVG** package for converting ggplot2 plots to SVG.
+
+[http://plourde.shinyapps.io/svgg_example](See the demo.)
 
 Installation and Usage
 ================================
-Install **devtools** to enable github installation.
+If not already installed, install **devtools**.
 
 ```r
-setInternet2() # enable R to use your proxy settings, if necessary
-options(repos=c(CRAN='http://cran.us.r-project.org')) # set your repository
 install.packages('devtools')
 ```
 
@@ -29,16 +29,22 @@ svgg.example()
 following:
 
 ```r
-output$simple_boxplot <- renderSVGG('simple_boxplot_svg', {
-    p <- ggplot(diamonds, 
-            aes(cut, carat, outlier.data.original.title=I(color), group=cut)) + 
-        geom_boxplot()
-    p
-}, popover.opts=list(
-        trigger='click', 
-        placement='bottom', 
-        html='true', 
-        title='simple_boxplot',
-        content=svgDownloadButton('simple_boxplot_dl', 'Download PNG', 'simple_boxplot'))
+library(shiny)
+library(ggplot2)
+library(svgg)
+
+ui <- fluidPage(
+    svgOutput('myplot')
 )
+
+server <- function(input, output) {
+    output$simple_boxplot <- renderSVGG({
+        p <- ggplot(diamonds, 
+                aes(cut, carat, outlier.labels=I(color), group=cut)) + 
+            geom_boxplot()
+        p
+    }, popover=list(title='My Plot'))
+}
+
+shinyApp(ui=ui, server=server)
 ```

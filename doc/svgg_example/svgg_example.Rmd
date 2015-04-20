@@ -1,5 +1,5 @@
 ---
-title: "svgg_example"
+title: "svgg example"
 output: html_document
 runtime: shiny
 ---
@@ -17,7 +17,7 @@ library(gridExtra)
 ```
 
 
-## simple_boxplot
+## Simple boxplot
 
 ```{r}
 renderSVGG({
@@ -27,7 +27,7 @@ renderSVGG({
 }, popover=list(title='simple_boxplot'))
 ```
 
-## complex_boxplot
+## Complex boxplot
 
 ```{r}
 renderSVGG({
@@ -38,7 +38,7 @@ renderSVGG({
 }, popover=list(title='complex_boxplot'))
 ```
 
-## scatter_plot_default_labels
+## Scatter plot (default labels)
 
 ```{r}
 renderSVGG({
@@ -46,7 +46,7 @@ renderSVGG({
 }, popover=list('scatter_plot_default_labels'))
 ```
 
-## scatter_plot_custom_labels
+## Scatter plot (custom labels)
 
 ```{r}
 renderSVGG({
@@ -54,7 +54,7 @@ renderSVGG({
 }, popover=list('scatter_plot_custom_labels'))
 ```
 
-## line_plot
+## Line plot
 
 ```{r}
 renderSVGG({
