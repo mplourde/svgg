@@ -12,7 +12,7 @@ Depends:
     shiny,
     htmltools,
     ggplot2,
-    gridSVG (>= 1.4.2),
+    gridSVG (>= 1.4.3),
     RJSONIO,
     scales
 License: GPL

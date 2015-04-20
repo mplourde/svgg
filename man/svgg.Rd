@@ -6,21 +6,21 @@
 \format{\preformatted{proto object 
  $ draw        :function (., data, scales, coordinates, na.rm = FALSE, ...)   
   ..- attr(*, "srcref")=Class 'srcref'  atomic [1:8] 11 11 22 3 11 3 11 22 
-  .. .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x0af04470>  
+  .. .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x03474b48>  
  $ default_stat:function (.)   
   ..- attr(*, "srcref")=Class 'srcref'  atomic [1:8] 38 19 38 42 19 42 38 38 
-  .. .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x0af04470>  
+  .. .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x03474b48>  
  $ objname     : chr "point" 
  $ default_aes :function (.)   
   ..- attr(*, "srcref")=Class 'srcref'  atomic [1:8] 40 18 46 3 18 3 40 46 
-  .. .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x0af04470>  
+  .. .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x03474b48>  
  $ draw_groups :function (., ...)   
   ..- attr(*, "srcref")=Class 'srcref'  atomic [1:8] 10 18 10 45 18 45 10 10 
-  .. .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x0af04470>  
+  .. .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x03474b48>  
  $ required_aes: chr [1:2] "x" "y" 
  $ draw_legend :function (., data, ...)   
   ..- attr(*, "srcref")=Class 'srcref'  atomic [1:8] 24 18 36 3 18 3 24 36 
-  .. .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x0af04470>  
+  .. .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x03474b48>  
  parent: proto object 
  .. parent: proto object 
 }}

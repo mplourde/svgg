@@ -17,7 +17,7 @@ GeomPoint <- proto(ggplot2:::Geom, {
       ggname(.$my_name(), pointsGrob(x, y, size=unit(size, "mm"), pch=shape,
       gp=gpar(col=alpha(colour, alpha), fill = alpha(fill, alpha), fontsize = size * .pt, 
         onmouseover=onmouseover, onmouseout=onmouseout,
-        `data-original-title`=data.original.title)))
+        `data-original-title`=point.labels)))
     })
   }
 
@@ -38,8 +38,9 @@ GeomPoint <- proto(ggplot2:::Geom, {
   default_stat <- function(.) StatIdentity
   required_aes <- c("x", "y")
   default_aes <- function(.) {
-        aes(shape=16, colour="black", size=2, fill = NA, alpha = 1, onmouseover='', onmouseout='',
-          data.original.title=paste0('(', paste(if (is.numeric(x)) sprintf('%.2f', x) else x, 
+        aes(shape=16, colour="black", size=2, fill = NA, alpha = 1, 
+          onmouseover='', onmouseout='',
+          point.labels=paste0('(', paste(if (is.numeric(x)) sprintf('%.2f', x) else x, 
                       if (is.numeric(y)) sprintf('%.2f', y) else y,
                       sep=', '), ')')
         )
@@ -185,35 +186,17 @@ geom_boxplot <- function (mapping = NULL, data = NULL, stat = "boxplot", positio
 
 
 #' @export 
-ggplot2SVG <- function(g, ..., id, width=400, height=400, res=72, 
-    tooltip.opts=list(trigger='hover', container='body', placement='right'),
-    popover.opts=list()) {
+ggplot2SVG <- function(g, ..., id, width=400, height=400, res=72) {
+    plot.temp <- tempfile()
+    svg.temp <- tempfile()
 
-    if ('content' %in% names(tooltip.opts)) {
-        tooltip.opts[['content']] <- as(tooltip.opts[['content']], 'character')
-    }
-
-    if ('content' %in% names(popover.opts)) {
-        popover.opts[['content']] <- as(popover.opts[['content']], 'character')
-    }
-
-    interfaces <- list(
-        tooltips=if (is.list(tooltip.opts)) sprintf("$('#%s [data-original-title]').tooltip(%s);", id, toJSON(tooltip.opts)) else '',
-        popover=if (is.list(popover.opts)) sprintf("$('#%s').parent().popover(%s);", id, toJSON(popover.opts)) else ''
-    )
-    js <- sprintf("$(document).ready(function() {%s});", paste(interfaces, collapse='\n'))
-
-    temp1 <- tempfile()
-    tempf <- tempfile()
-    png(file=temp1, height=height, width=width)
-    #pdf(file=NULL, width=width/res, height=height/res)
+    png(file=plot.temp, height=height, width=width)
     print(g)
-    grid.script(js)
-    
-    svg.txt <- suppressWarnings(invisible(as(grid.export(..., name=tempf, prefix=id, res=res)$svg, 'character')))
+    svg.txt <- suppressWarnings(invisible(as(grid.export(..., name=svg.temp, res=res)$svg, 'character')))
     dev.off()
-    unlink(temp1)
-    unlink(tempf)
+
+    unlink(plot.temp)
+    unlink(svg.temp)
     return(svg.txt)
 }
 
@@ -228,12 +211,11 @@ svgOutput <- function(outputId, width='100%', height='400px', inline=FALSE) {
     style <- paste("width:", validateCssUnit(width), ";", "height:", validateCssUnit(height))
     container <- if (inline) span else div
     attachDependencies(
-        div(
-            container(div(id=outputId, class='shiny-svg-output', style=style), 
-                id=paste(outputId, '_proxy_', sep='_'), 
-                class='shiny-plot-output', 
-                style=style # required if you want the width/height args to svgOutput to take effect
-            ),
+        container(
+            id=paste(outputId, '_proxy_', sep='_'), 
+            class='shiny-plot-output', 
+            style=style, # required if you want the width/height args to svgOutput to take effect
+            div(id=outputId, class='shiny-svg-output'),
             tags$canvas(id=paste(outputId, '_canvas_', sep='_'), style='display:none')
         ),
         svg.js
@@ -245,24 +227,25 @@ svgOutput <- function(outputId, width='100%', height='400px', inline=FALSE) {
 # points <- getGrob(panels[[1]], gPath('geom_point'), grep=TRUE)
 
 #' @export 
-svgDownloadButton <- function(inputId, label, svgOutput.id, download) {
-    if (missing(download)) {
-        download <- paste0(svgOutput.id, '.png')
-    }
-    sprintf('<button id="%s" type="button" onclick="download_svg(\'%s\', \'%s\')" class="btn action-button">%s</button>',
-        inputId, svgOutput.id, download, label)
-}
-
-#' @export 
-renderSVGG <- function(svg.id, expr, tooltip.opts=list(trigger='hover', container='body', placement='bottom'), popover.opts=NA, 
-    width='auto', height='auto', res=72, env=parent.frame(), quoted=FALSE) {
+renderSVGG <- function(expr, 
+    tooltips=list(trigger='hover', container='body', placement='top'), 
+    popover=list(trigger='click', placement='bottom', title='Plot', content=''),
+    download.btn=TRUE,
+    save.as='plot.png',
+    width='auto', 
+    height='auto', 
+    res=72, 
+    env=parent.frame(), 
+    quoted=FALSE) {
 
     installExprFunction(expr, "func", env, quoted)
 
     widthWrapper <- if (is.function(width)) reactive({width()}) else NULL
     heightWrapper <- if (is.function(height)) reactive({height()}) else NULL
-    outputFunc <- if (identical(height, "auto")) svgOutput else function(outputId) svgOutput(outputId, height = NULL)
-
+    outputFunc <- svgOutput
+    if (!identical(height, "auto")) 
+        formals(outputFunc)["height"] <- list(NULL)
+    
     markRenderFunction(outputFunc, 
         function(shinysession, name, ...) {
             if (!is.null(widthWrapper)) width <- widthWrapper()
@@ -270,6 +253,8 @@ renderSVGG <- function(svg.id, expr, tooltip.opts=list(trigger='hover', containe
             prefix <- "output_"
             if (width == 'auto') width <- shinysession$clientData[[paste0(prefix, name, '__proxy__width')]]
             if (height == 'auto') height <- shinysession$clientData[[paste0(prefix, name, '__proxy__height')]]
+            #if (width == 'auto') width <- shinysession$clientData[[paste0(prefix, name, '_width')]]
+            #if (height == 'auto') height <- shinysession$clientData[[paste0(prefix, name, '_height')]]
             if (is.null(width) || is.null(height) || width <= 0 || height <= 0) {
                 return(NULL)
             }
@@ -277,13 +262,43 @@ renderSVGG <- function(svg.id, expr, tooltip.opts=list(trigger='hover', containe
             pixelratio <- shinysession$clientData$pixelratio
             if (is.null(pixelratio)) pixelratio <- 1
             
-            p <- func()
+            popover.opts=list(
+                trigger='click', 
+                placement='bottom', 
+                title='Plot',
+                content=''
+            )
+            show.popover <- FALSE
+            if (! identical(popover, FALSE)) {
+                if (! is.list(popover)) {
+                    stop('renderSVGG: popover options must be a list.')
+                }
+                show.popover = TRUE
+                popover.opts <- modifyList(popover.opts, popover)
+            }
 
-            #if (! any(c('ggplot', 'gtable') %in% class(p))) {
-            #    stop("Expression supplied to renderSVGG returns unrecognized GROB type.")
-            #}
-            list(svg_html=ggplot2SVG(p, id=svg.id, tooltip.opts=tooltip.opts, popover.opts=popover.opts, 
-                res=res*pixelratio, width=width*pixelratio, height=height*pixelratio))
+            tooltip.opts <- list(trigger='hover', placement='top')
+            show.tooltips <- FALSE
+            if (! identical(tooltips, FALSE)) {
+                if (! is.list(tooltips)) {
+                    stop('renderSVGG: tooltip options must be a list.')
+                }
+                show.tooltips <- TRUE
+                tooltip.opts <- modifyList(tooltip.opts, tooltips)
+                tooltip.opts$container <- 'body'
+            }
+
+            svg.html <- ggplot2SVG(func(), res=res*pixelratio, width=width*pixelratio, height=height*pixelratio)
+            svg.html <- paste0('<div class="svg_container">', svg.html, '</div>')
+
+            list(svg_html=svg.html,
+                show_popover=show.popover,
+                popover_opts=popover.opts,
+                show_tooltips=show.tooltips,
+                tooltip_opts=tooltip.opts,
+                download_btn=download.btn,
+                save_as=save.as
+            )
         }
     )
 }
@@ -292,76 +307,70 @@ renderSVGG <- function(svg.id, expr, tooltip.opts=list(trigger='hover', containe
 svgg.example <- function() {
     ui <- fluidPage(
         h2('svgg Example'),
-        p('This demo will take a moment to load. Click any plot to activate its PNG download popovers'),
+        p('This demo will take a moment to load. Click any plot to activate its PNG download popover.'),
         hr(),
-        h4('simple_boxplot'),
-        svgOutput('simple_boxplot'),
-        h4('complex_boxplot'),
-        svgOutput('complex_boxplot'),
+        #h4('simple_boxplot'),
+        #svgOutput('simple_boxplot'),
+        #h4('complex_boxplot'),
+        #svgOutput('complex_boxplot'),
         h4('scatter_plot_default_labels'),
         svgOutput('scatter_plot_default_labels'),
         h4('scatter_plot_custom_labels'),
-        svgOutput('scatter_plot_custom_labels'),
-        h4('line_plot'),
-        svgOutput('line_plot'),
-        h4('arrangeGrob'),
-        svgOutput('arrangeGrob')
+        svgOutput('scatter_plot_custom_labels')#,
+        #h4('line_plot'),
+        #svgOutput('line_plot'),
+        #h4('arrangeGrob'),
+        #svgOutput('arrangeGrob')
     )
 
     server <- function(input, output, session) {
-        output$simple_boxplot <- renderSVGG('simple_boxplot_svg', {
-            p <- ggplot(diamonds, 
-                    aes(cut, carat, outlier.data.original.title=I(color), group=cut)) + 
-                geom_boxplot()
-            p
-        },
-            popover.opts=list(trigger='click', placement='bottom', html='true', title='simple_boxplot',
-                    content=svgDownloadButton('simple_boxplot_dl', 'Download PNG', 'simple_boxplot'))
-        )
+        #output$simple_boxplot <- renderSVGG('simple_boxplot_svg', {
+        #    p <- ggplot(diamonds, 
+        #            aes(cut, carat, outlier.data.original.title=I(color), group=cut)) + 
+        #        geom_boxplot()
+        #    p
+        #},
+        #    popover.opts=list(trigger='click', placement='bottom', html='true', title='simple_boxplot',
+        #            content=svgDownloadButton('simple_boxplot_dl', 'Download PNG', 'simple_boxplot'))
+        #)
 
-        output$complex_boxplot <- renderSVGG('simple_boxplot_svg', {
-            p <- ggplot(diamonds, 
-                    aes(cut, carat, fill=color, outlier.data.original.title=I(carat), 
-                        group=interaction(cut, color))) + 
-                geom_boxplot()
-            p
-        },
-            popover.opts=list(trigger='click', placement='bottom', html='true', title='complex_boxplot',
-                    content=svgDownloadButton('complex_boxplot_dl', 'Download PNG', 'complex_boxplot'))
-        )
+        #output$complex_boxplot <- renderSVGG('simple_boxplot_svg', {
+        #    p <- ggplot(diamonds, 
+        #            aes(cut, carat, fill=color, outlier.data.original.title=I(carat), 
+        #                group=interaction(cut, color))) + 
+        #        geom_boxplot()
+        #    p
+        #},
+        #    popover.opts=list(trigger='click', placement='bottom', html='true', title='complex_boxplot',
+        #            content=svgDownloadButton('complex_boxplot_dl', 'Download PNG', 'complex_boxplot'))
+        #)
 
-        output$scatter_plot_default_labels <- renderSVGG('scatter_plot_default_labels_svg', {
+        output$scatter_plot_default_labels <- renderSVGG({
             p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
-        },
-            popover.opts=list(trigger='click', placement='bottom', html='true', title='scatter_plot_default_labels',
-                    content=svgDownloadButton('scatter_plot_default_labels_dl', 'Download PNG', 'scatter_plot_default_labels'))
-        )
-
-        output$scatter_plot_custom_labels <- renderSVGG('scatter_plot_custom_labels_svg', {
-            p <- ggplot(mtcars, aes(wt, mpg, data.original.title=mpg)) + geom_point()
-        },
-            popover.opts=list(trigger='click', placement='bottom', html='true', title='scatter_plot_custom_labels',
-                    content=svgDownloadButton('scatter_plot_custom_labels_dl', 'Download PNG', 'scatter_plot_custom_labels'))
-        )
-
-        output$line_plot <- renderSVGG('line_plot', {
-            set.seed(100)
-            n <- 50
-            d <- data.frame(x=seq(n), y=rnorm(n))
-            ggplot(d, aes(x, y)) + geom_line() + geom_point(alpha=0, size=4, color='red', onmouseover='set_alpha(this, 1)', 
-                onmouseout='set_alpha(this, 0)')
-        },
-            popover.opts=list(trigger='click', placement='bottom', html='true', title='line_plot',
-                    content=svgDownloadButton('line_plot_dl', 'Download PNG', 'line_plot'))
-        )
-
-        output$arrangeGrob <- renderSVGG('arrangeGrob', {
-            p1 <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
-            p2 <- ggplot(diamonds, 
-                    aes(cut, carat, outlier.data.original.title=I(color), group=cut)) + 
-                geom_boxplot()
-            arrangeGrob(p1, p2, nrow=1)
         })
+
+        output$scatter_plot_custom_labels <- renderSVGG({
+            p <- ggplot(mtcars, aes(wt, mpg, point.labels=cyl)) + geom_point()
+        })
+
+        #output$line_plot <- renderSVGG('line_plot', {
+        #    set.seed(100)
+        #    n <- 50
+        #    d <- data.frame(x=seq(n), y=rnorm(n))
+        #    ggplot(d, aes(x, y)) + geom_line() + geom_point(alpha=0, size=4, color='red', onmouseover='set_alpha(this, 1)', 
+        #        onmouseout='set_alpha(this, 0)')
+        #},
+        #    popover.opts=list(trigger='click', placement='bottom', html='true', title='line_plot',
+        #            content=svgDownloadButton('line_plot_dl', 'Download PNG', 'line_plot'))
+        #)
+
+        #output$arrangeGrob <- renderSVGG('arrangeGrob', {
+        #    p1 <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
+        #    p2 <- ggplot(diamonds, 
+        #            aes(cut, carat, outlier.data.original.title=I(color), group=cut)) + 
+        #        geom_boxplot()
+        #    arrangeGrob(p1, p2, nrow=1)
+        #})
     }
 
     runApp(list(ui=ui, server=server))
