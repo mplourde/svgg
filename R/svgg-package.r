@@ -164,8 +164,6 @@ GeomBoxplot <- proto(ggplot2:::Geom, {
 
 })
 
-#geom_boxplot <- ggplot2::geom_boxplot
-#environment(geom_boxplot) <- environment()
 
 #' @export
 geom_boxplot <- function (mapping = NULL, data = NULL, stat = "boxplot", position = "dodge", 
@@ -200,7 +198,6 @@ ggplot2SVG <- function(g, ..., id, width=400, height=400, res=72) {
 }
 
 svg.js <- htmlDependency(name='svgBindings', version='0.0.1', c(href='svgg'), script='svgOutput.js')
-#svgD3 <- htmlDependency(name='svgD3', version='0.0.1', c(href='svgg'), script='d3.min.js')
 
 #' @export
 svgOutput <- function(outputId, width='100%', height='400px', inline=FALSE) {
@@ -221,9 +218,6 @@ svgOutput <- function(outputId, width='100%', height='400px', inline=FALSE) {
     )
 }
 
-# gt <- ggplot_gtable(ggplot_build(g))
-# panels <- gt$grobs[gt$layout$name == 'panel']
-# points <- getGrob(panels[[1]], gPath('geom_point'), grep=TRUE)
 
 #' @export 
 renderSVGG <- function(expr, 
