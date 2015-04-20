@@ -2,7 +2,7 @@ svgg
 ================================
 **svgg** is an R package for adding mouse effects to ggplot2 plot outputs presented with Shiny. The mouse effects include point tooltips for `geom_point`, `geom_line`, `geom_boxplot`, and any combination of these plots created with `arrangeGrob` from the **gridExtra** package. This package relies on the **gridSVG** package for converting ggplot2 plots to SVG.
 
-[http://plourde.shinyapps.io/svgg_example](See the demo.)
+[See the demo.](http://plourde.shinyapps.io/svgg_example)
 
 Installation and Usage
 ================================

@@ -230,7 +230,7 @@ renderSVGG <- function(expr,
     tooltips=list(trigger='hover', container='body', placement='top'), 
     popover=list(trigger='click', placement='bottom', title='Plot', content=''),
     download.btn=TRUE,
-    save.as='plot.png',
+    save.as=NULL,
     width='auto', 
     height='auto', 
     res=72, 
@@ -285,6 +285,10 @@ renderSVGG <- function(expr,
                 show.tooltips <- TRUE
                 tooltip.opts <- modifyList(tooltip.opts, tooltips)
                 tooltip.opts$container <- 'body'
+            }
+
+            if (is.null(save.as)) {
+                save.as <- paste0(popover.opts$title, '.png')
             }
 
             svg.html <- ggplot2SVG(func(), res=res*pixelratio, width=width*pixelratio, height=height*pixelratio)
@@ -368,7 +372,7 @@ svgg.example <- function() {
                     aes(cut, carat, outlier.labels=I(color), group=cut)) + 
                 geom_boxplot()
             arrangeGrob(p1, p2, nrow=1)
-        })
+        }, popover=list(title='arrangeGrob'))
     }
 
     runApp(list(ui=ui, server=server))
