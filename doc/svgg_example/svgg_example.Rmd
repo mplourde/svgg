@@ -1,5 +1,5 @@
 ---
-title: "svgg example"
+title: "Package svgg examples"
 output: html_document
 runtime: shiny
 ---

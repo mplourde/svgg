@@ -11,7 +11,6 @@ $.extend(svgOutputBinding, {
 
         if (data.show_popover) {
             var $svg_container = $('#' + el_id + ' .svg_container');
-            console.log($svg_container);
             var popover_opts = data.popover_opts
 
             if (data.download_btn) {
