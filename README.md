@@ -4,8 +4,6 @@ svgg
 
 [See the demo.](http://plourde.shinyapps.io/svgg_example)
 
-[R Philly presentation](https://plourde.shinyapps.io/svgg_presentation/presentation.Rmd#1)
-
 Installation and Usage
 ================================
 If not already installed, install **devtools**.
